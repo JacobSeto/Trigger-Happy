@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using Unity.Netcode;
 using System.Collections.Generic;
+using WebSocketSharp;
 public class PlayerIcon : NetworkBehaviour
 {
     [SerializeField] Transform playerIcon;
@@ -12,6 +13,10 @@ public class PlayerIcon : NetworkBehaviour
         if (IsOwner)
         {
             string playerName = GameManager.Instance.playerNameField.text;
+            if (playerName.IsNullOrEmpty())
+            {
+                playerName = "Player " + OwnerClientId;
+            }
             SetPlayerNameServerRpc(playerName);
         }
         playerIcon.SetParent(GameManager.Instance.playerListUI, false);
