@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 public class Player : NetworkBehaviour
 {
@@ -18,15 +19,11 @@ public class Player : NetworkBehaviour
     bool tookDamage;
     [Tooltip("The card selected that round. Null if no card selected")]
     [HideInInspector] public ActionCard selectedCard = null;
-    [HideInInspector] public PlayerIcon selectedPlayerIcon = null;
+    public PlayerIcon selectedPlayerIcon = null;
 
     [SerializeField] ActionCard actionCardPrefab;
 
 
-    private void Start()
-    {
-        GameManager.Instance.players.Add(this);
-    }
     /// <summary>
     /// Tell server a player has spawned
     /// </summary>
@@ -35,6 +32,18 @@ public class Player : NetworkBehaviour
         if (IsOwner)
         {
             deckBuilder.SetParent(GameManager.Instance.deckBuilderUI, false);
+        }
+        GameManager.Instance.players.Add(this);
+        foreach (var player in GameManager.Instance.players)
+        {
+            if (NetworkManager.Singleton.LocalClientId == player.OwnerClientId)
+            {
+                foreach (var p in GameManager.Instance.players)
+                {
+                    p.GetComponent<PlayerIcon>().targetPlayer = player;
+                }
+                break;
+            }
         }
     }
 
@@ -54,7 +63,6 @@ public class Player : NetworkBehaviour
         foreach(ActionCard card in hand)
         {
             card.transform.SetParent(GameManager.Instance.discardUI, false);
-            card.transform.position = Vector3.zero;
         }
         hand.Clear();
         for(int i = 0; i < drawAmount; i++)
@@ -65,7 +73,6 @@ public class Player : NetworkBehaviour
                 foreach (ActionCard card in discard)
                 {
                     card.transform.SetParent(GameManager.Instance.deckUI, false);
-                    card.transform.position = Vector3.zero;
                 }
                 discard.Clear();
             }
@@ -88,8 +95,16 @@ public class Player : NetworkBehaviour
         {
             discard.Add(selectedCard);
             selectedCard.transform.SetParent(GameManager.Instance.discardUI, false);
-            selectedCard.transform.position = Vector3.zero;
             hand.Remove(selectedCard);
+            selectedCard.UnSelectAction();
+            selectedCard = null;
+        }
+        else
+        {
+            ActionCard selectCard = hand[Random.Range(0, hand.Count)];
+            discard.Add(selectCard);
+            selectCard.transform.SetParent(GameManager.Instance.discardUI, false);
+            hand.Remove(selectCard);
         }
         selectedCard = null;
         GameManager.Instance.discardCardUI.SetActive(false);
@@ -100,7 +115,6 @@ public class Player : NetworkBehaviour
         GameManager.Instance.ServerLogRpc("Player " + OwnerClientId + ": " +
          (selectedCard != null ? selectedCard.actionType.ToString() : "none") + " targeting Player " +
          (selectedPlayerIcon != null ? selectedPlayerIcon.player.OwnerClientId.ToString() : "none"));
-
         if (selectedCard == null)
         {
             Mulligan();
@@ -108,6 +122,9 @@ public class Player : NetworkBehaviour
         else
         {
             selectedCard.UnSelectAction();
+            discard.Add(selectedCard);
+            selectedCard.transform.SetParent(GameManager.Instance.discardUI, false);
+            hand.Remove(selectedCard);
             selectedCard = null;
         }
         if(selectedPlayerIcon != null)
@@ -115,6 +132,7 @@ public class Player : NetworkBehaviour
             selectedPlayerIcon.UnSelectPlayer();
             selectedPlayerIcon = null;
         }
+        
     }
 
 

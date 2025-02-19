@@ -109,7 +109,8 @@ MonoBehaviour:
   playerIcon: {fileID: 504720587189719155}
   playerNameText: {fileID: 891729164086921394}
   selectedUI: {fileID: 382464801005236102}
-  player: {fileID: 0}
+  player: {fileID: 1616938903160293525}
+  targetPlayer: {fileID: 0}
 --- !u!1001 &3418520496300041763
 PrefabInstance:
   m_ObjectHideFlags: 0

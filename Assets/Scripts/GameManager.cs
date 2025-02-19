@@ -99,7 +99,6 @@ public class GameManager : NetworkBehaviour
         {
             player.PlayActionRpc();
         }
-        Debug.Log("Resolve Cards Played");
         EndRoundServer();
     }
 
