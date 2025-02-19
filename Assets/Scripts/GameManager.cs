@@ -10,14 +10,24 @@ public class GameManager : NetworkBehaviour
     public List<Player> players = new List<Player>();
     [SerializeField] int roundTime;
     [SerializeField] int minPlayers;
-    [Header("UI")]
+    [Header("Game Set Up UI")]
     [SerializeField] GameObject startGameButton;
     public TMP_InputField playerNameField;
+    [Header("Game UI")]
     public Transform playerListUI;
-    public GameObject playerUI;
-    [SerializeField] int timer;
-    bool inRound;
-    public NetworkVariable<int> playerCount = new NetworkVariable<int>(0);
+    public Transform deckBuilderUI;
+    [SerializeField] GameObject gameUI;
+    [SerializeField] GameObject playerUI;
+    [SerializeField] TMP_Text timerText;
+    [SerializeField] GameObject serverLogPrefab;
+    [SerializeField] Transform serverLogUI;
+    [Header("Player UI")]
+    public Transform deckUI;
+    public Transform handUI;
+    public Transform discardUI;
+    public GameObject discardCardUI;
+    public int discardTime;
+    int timer;
 
     private void Awake()
     {
@@ -27,32 +37,15 @@ public class GameManager : NetworkBehaviour
     private void Start()
     {
         startGameButton.SetActive(false);
-        playerListUI.gameObject.SetActive(false);
+        gameUI.SetActive(false);
     }
     public override void OnNetworkSpawn()
     {
         if (IsServer)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnPlayerJoined;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnPlayerLeft;
             startGameButton.SetActive(true);
         }
         playerListUI.gameObject.SetActive(true);
-    }
-    private void OnPlayerJoined(ulong clientId)
-    {
-        if (IsServer)
-        {
-            playerCount.Value++;
-        }
-    }
-
-    private void OnPlayerLeft(ulong clientId)
-    {
-        if (IsServer)
-        {
-            playerCount.Value = Mathf.Max(0, playerCount.Value - 1);
-        }
     }
 
     /// <summary>
@@ -60,57 +53,72 @@ public class GameManager : NetworkBehaviour
     /// </summary>
     public void StartGame()
     {
-        if (playerCount.Value >= minPlayers)
+        if (IsServer && players.Count >= minPlayers)
         {
-            StartRound();
+            StartRoundServer();
             startGameButton.SetActive(false);
         }
-
     }
 
-    // Expose the timer for other scripts to access
-    public float GetTimer()
-    {
-        return timer;
-    }
-
-    void StartRound()
+    void StartRoundServer()
     {
         timer = roundTime;
-        SetTimerOnClientsClientRpc(timer);
+        SetTimerTextRpc(timer);
         InvokeRepeating(nameof(DecrementTimer), 0, 1f);
+        StartRoundRpc();
 
     }
+
+    [Rpc(SendTo.Everyone)]
+    void StartRoundRpc()
+    {
+        gameUI.SetActive(true);
+    }
+
     void DecrementTimer()
     {
         timer--;
         if (timer <= 0)
         {
             CancelInvoke(nameof(DecrementTimer));
+            ResolveRoundServer();
         }
-        SetTimerOnClientsClientRpc(timer);
-    }
-    // Client RPC to update the timer on each client
-    [Rpc(SendTo.NotServer)]
-    private void SetTimerOnClientsClientRpc(int newTimer)
-    {
-        // Set the timer value locally
-        timer = newTimer;
+        SetTimerTextRpc(timer);
     }
 
-    void ResolveRound()
+    [Rpc(SendTo.Everyone)]
+    private void SetTimerTextRpc(int time)
     {
-
+        timerText.text = time.ToString();
     }
 
-    void EndRound()
+    void ResolveRoundServer()
     {
+        if (!IsServer) return;
+        foreach (Player player in players)
+        {
+            player.PlayActionRpc();
+        }
+        Debug.Log("Resolve Cards Played");
+        EndRoundServer();
+    }
 
+    void EndRoundServer()
+    {
+        if (!IsServer) return;
+        StartRoundServer();
     }
 
     void EndGame()
     {
 
+    }
+    [Rpc(SendTo.Everyone)]
+    public void ServerLogRpc(string message)
+    {
+        GameObject serverLog = Instantiate(serverLogPrefab, serverLogUI);
+        serverLog.GetComponent<TMP_Text>().text = message;
+        Destroy(serverLog, 10f);
     }
 
 }

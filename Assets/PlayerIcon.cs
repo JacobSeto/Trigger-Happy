@@ -7,6 +7,15 @@ public class PlayerIcon : NetworkBehaviour
 {
     [SerializeField] Transform playerIcon;
     public TMP_Text playerNameText;
+    [SerializeField] GameObject selectedUI;
+    [HideInInspector] public Player player;
+    bool selected;
+
+    private void Start()
+    {
+        player = GetComponent<Player>();
+        selectedUI.SetActive(false);
+    }
 
     public override void OnNetworkSpawn()
     {
@@ -38,5 +47,36 @@ public class PlayerIcon : NetworkBehaviour
     {
         GameManager.Instance.players[playerIndex]
             .GetComponent<PlayerIcon>().playerNameText.text = playerName;
+    }
+
+    public void ToggleSelection()
+    {
+        if (selected)
+        {
+            UnSelectPlayer();
+        }
+        else
+        {
+            SelectPlayer();
+        }
+    }
+
+    public void SelectPlayer()
+    {
+        if (player.selectedCard != null)
+        {
+            player.selectedCard.UnSelectAction();
+        }
+        selectedUI.SetActive(true);
+        player.selectedPlayerIcon = this;
+        selected = true;
+    }
+
+
+    public void UnSelectPlayer()
+    {
+        selectedUI.SetActive(false);
+        player.selectedPlayerIcon = null;
+        selected = false;
     }
 }
