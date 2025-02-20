@@ -3,12 +3,14 @@ using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
     public List<Player> players = new List<Player>();
     [SerializeField] int roundTime;
+    [SerializeField] int resolveTime = 3;
     [SerializeField] int minPlayers;
     [Header("Game Set Up UI")]
     [SerializeField] GameObject startGameButton;
@@ -21,6 +23,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] TMP_Text timerText;
     [SerializeField] GameObject serverLogPrefab;
     [SerializeField] Transform serverLogUI;
+    [SerializeField] TMP_Text winText;
     [Header("Player UI")]
     public Transform deckUI;
     public Transform handUI;
@@ -38,6 +41,8 @@ public class GameManager : NetworkBehaviour
     {
         startGameButton.SetActive(false);
         gameUI.SetActive(false);
+        discardCardUI.SetActive(false);
+        winText.enabled = false;
     }
     public override void OnNetworkSpawn()
     {
@@ -81,7 +86,7 @@ public class GameManager : NetworkBehaviour
         if (timer <= 0)
         {
             CancelInvoke(nameof(DecrementTimer));
-            ResolveRoundServer();
+            StartCoroutine(ResolveRoundServer());
         }
         SetTimerTextRpc(timer);
     }
@@ -89,28 +94,46 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void SetTimerTextRpc(int time)
     {
-        timerText.text = time.ToString();
+        if(time == 0)
+        {
+            timerText.text = "DRAW!";
+        }
+        else
+        {
+            timerText.text = time.ToString();
+        }
     }
 
-    void ResolveRoundServer()
+    IEnumerator ResolveRoundServer()
     {
-        if (!IsServer) return;
         foreach (Player player in players)
         {
             player.PlayActionRpc();
+        }
+        yield return new WaitForSeconds(resolveTime);
+        foreach (Player player in players)
+        {
+            player.ResetRoundStatesRpc();
         }
         EndRoundServer();
     }
 
     void EndRoundServer()
     {
-        if (!IsServer) return;
-        StartRoundServer();
+        if (players.Count == 1)
+        {
+            EndGameRpc();
+        }
+        else
+        {
+            StartRoundServer();
+        }
     }
-
-    void EndGame()
+    [Rpc(SendTo.Everyone)]
+    void EndGameRpc()
     {
-
+        winText.enabled = true;
+        winText.text = players[0].GetComponent<PlayerIcon>().playerNameText.text + " Wins!";
     }
     [Rpc(SendTo.Everyone)]
     public void ServerLogRpc(string message)

@@ -5,13 +5,12 @@ using System.Collections.Generic;
 using WebSocketSharp;
 public class PlayerIcon : NetworkBehaviour
 {
-    [SerializeField] Transform playerIcon;
+    public Transform iconTransform;
     public TMP_Text playerNameText;
     [SerializeField] GameObject selectedUI;
-    public Player player;
-    public Player targetPlayer;
+    public Player representedPlayer;
+    [HideInInspector] public Player targetPlayer;
     bool selected;
-
 
     public override void OnNetworkSpawn()
     {
@@ -24,8 +23,7 @@ public class PlayerIcon : NetworkBehaviour
             }
             SetPlayerNameServerRpc(playerName);
         }
-        playerIcon.SetParent(GameManager.Instance.playerListUI, false);
-        player = GetComponent<Player>();
+        iconTransform.SetParent(GameManager.Instance.playerListUI, false);
         selectedUI.SetActive(false);
     }
 
@@ -61,9 +59,9 @@ public class PlayerIcon : NetworkBehaviour
 
     void SelectPlayer()
     {
-        if (targetPlayer.selectedCard != null)
+        if (targetPlayer.selectedPlayerIcon != null)
         {
-            targetPlayer.selectedCard.UnSelectAction();
+            targetPlayer.selectedPlayerIcon.UnSelectPlayer();
         }
         selectedUI.SetActive(true);
         targetPlayer.selectedPlayerIcon = this;
