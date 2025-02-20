@@ -82,6 +82,22 @@ public class Player : NetworkBehaviour
         card.Init((PlayerAction)actionType, this);
     }
 
+    public void RemoveCardFromDeck(int actionType)
+    {
+        if(deck.Count != 0)
+        {
+            foreach(var card in deck)
+            {
+                if((int)card.actionType == actionType)
+                {
+                    deck.Remove(card);
+                    Destroy(card);
+                    break;
+                }
+            }
+        }
+    }
+
     public void Mulligan()
     {
         discard.AddRange(hand);
@@ -158,6 +174,7 @@ public class Player : NetworkBehaviour
                 yield return StartCoroutine(Shoot());
                 break;
             case PlayerAction.Deflect:
+                deflecting = true;
                 yield return StartCoroutine(Deflect());
                 break;
             case PlayerAction.Steal:
@@ -202,12 +219,17 @@ public class Player : NetworkBehaviour
         }
     }
     /// <summary>
-    /// Deflect one Shoot to target player
+    /// Deflect one Shoot to target player if did not take damage
     /// </summary>
     IEnumerator Deflect()
     {
-        yield return new WaitForSeconds(speedOne);
-        deflecting = true;
+        yield return new WaitForSeconds(speedThree);
+        if (!tookDamage && ammo >= 1 && selectedPlayerIcon.representedPlayer != null)
+        {
+            UpdateAmmoRpc(ammo - 1);
+            selectedPlayerIcon.representedPlayer.TakeDamageRpc();
+        }
+
     }
     /// <summary>
     /// Steal one ammo from target player
@@ -264,17 +286,12 @@ public class Player : NetworkBehaviour
         }
         if(deflecting && !wasShot)
         {
-            if (ammo >= 1 && selectedPlayerIcon.representedPlayer != null)
-            {
-                UpdateAmmoRpc(ammo - 1);
-                selectedPlayerIcon.representedPlayer.TakeDamageRpc();
-            }
             wasShot = true;
         }
         else
         {
             UpdateHealthRpc(health - 1);
-            wasShot = true;
+            tookDamage = true;
         }
 
     }

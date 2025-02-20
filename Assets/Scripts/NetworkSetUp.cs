@@ -29,7 +29,6 @@ public class NetworkSetUp : MonoBehaviour
     /// <returns>The join code</returns>
     public async Task<string> StartHostWithRelay(int maxConnections = 8)
     {
-        Debug.Log("Initialize Sync");
         //Initialize the Unity Services engine
         await UnityServices.InitializeAsync();
         //Always authenticate your users beforehand
@@ -38,13 +37,10 @@ public class NetworkSetUp : MonoBehaviour
             //If not already logged, log the user in
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
         }
-        Debug.Log("Allocate");
         // Request allocation and join code
         Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
-        Debug.Log("Create Join Code");
         var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
         // Configure transport
-        Debug.Log("Create Server Data");
         NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "dtls"));
         // Start host
         Debug.Log(joinCode);

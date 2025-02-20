@@ -681,8 +681,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 343, y: 99}
-  m_SizeDelta: {x: 200, y: 400}
+  m_AnchoredPosition: {x: 377, y: 53}
+  m_SizeDelta: {x: 400, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &387694703
 MonoBehaviour:
@@ -2136,7 +2136,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   players: []
   roundTime: 10
-  resolveTime: 3
+  resolveTime: 5
   minPlayers: 2
   startGameButton: {fileID: 630197857}
   playerNameField: {fileID: 158991294}

@@ -17,6 +17,12 @@ public class DeckBuilderButton : MonoBehaviour
         UpdateCounter();
     }
 
+    public void RemoveCard()
+    {
+        numCardsInDeck--;
+        UpdateCounter();
+    }
+
     void UpdateCounter()
     {
         buttonText.text = cardName.ToString() + " x" + numCardsInDeck;

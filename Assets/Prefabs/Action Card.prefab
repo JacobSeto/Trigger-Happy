@@ -486,11 +486,11 @@ MonoBehaviour:
   actionType: 0
   selectedUI: {fileID: 1877900101844556959}
   cardName: {fileID: 6465661914518574800}
-  cardImage: {fileID: 0}
-  reloadSprite: {fileID: 0}
-  shootSprite: {fileID: 0}
-  deflectSprite: {fileID: 0}
-  stealSprite: {fileID: 0}
+  cardImage: {fileID: 6807923669370717619}
+  reloadSprite: {fileID: 1700611765809655252, guid: c91ddafd57b6ba642baf7e455b22e1f2, type: 3}
+  shootSprite: {fileID: -1690394322241920187, guid: a3b0af1348248a140b237165d342d98e, type: 3}
+  deflectSprite: {fileID: -344569315240798582, guid: 953df3e83327498449bdd11c8cc81e0f, type: 3}
+  stealSprite: {fileID: -392831802838640451, guid: 2435aa0663e067342ae41466d38817b9, type: 3}
 --- !u!1 &5932229919991081083
 GameObject:
   m_ObjectHideFlags: 0

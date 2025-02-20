@@ -26,11 +26,8 @@ public class PlayerIcon : NetworkBehaviour
             SetPlayerNameServerRpc(playerName);
             selectButton.interactable = false;
         }
-        else
-        {
-            iconTransform.SetParent(GameManager.Instance.playerListUI, false);
-            selectedUI.SetActive(false);
-        }
+        iconTransform.SetParent(GameManager.Instance.playerListUI, false);
+        selectedUI.SetActive(false);
     }
 
     [Rpc(SendTo.Server)]
