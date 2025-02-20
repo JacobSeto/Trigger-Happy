@@ -3,6 +3,7 @@ using TMPro;
 using Unity.Netcode;
 using System.Collections.Generic;
 using WebSocketSharp;
+using UnityEngine.UI;
 public class PlayerIcon : NetworkBehaviour
 {
     public Transform iconTransform;
@@ -10,6 +11,7 @@ public class PlayerIcon : NetworkBehaviour
     [SerializeField] GameObject selectedUI;
     public Player representedPlayer;
     [HideInInspector] public Player targetPlayer;
+    public Button selectButton;
     bool selected;
 
     public override void OnNetworkSpawn()
@@ -22,9 +24,13 @@ public class PlayerIcon : NetworkBehaviour
                 playerName = "Player " + OwnerClientId;
             }
             SetPlayerNameServerRpc(playerName);
+            selectButton.interactable = false;
         }
-        iconTransform.SetParent(GameManager.Instance.playerListUI, false);
-        selectedUI.SetActive(false);
+        else
+        {
+            iconTransform.SetParent(GameManager.Instance.playerListUI, false);
+            selectedUI.SetActive(false);
+        }
     }
 
     [Rpc(SendTo.Server)]

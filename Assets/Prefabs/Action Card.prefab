@@ -486,6 +486,11 @@ MonoBehaviour:
   actionType: 0
   selectedUI: {fileID: 1877900101844556959}
   cardName: {fileID: 6465661914518574800}
+  cardImage: {fileID: 0}
+  reloadSprite: {fileID: 0}
+  shootSprite: {fileID: 0}
+  deflectSprite: {fileID: 0}
+  stealSprite: {fileID: 0}
 --- !u!1 &5932229919991081083
 GameObject:
   m_ObjectHideFlags: 0
@@ -522,8 +527,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 4.5}
+  m_SizeDelta: {x: 20, y: 11}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6904450864390025739
 CanvasRenderer:

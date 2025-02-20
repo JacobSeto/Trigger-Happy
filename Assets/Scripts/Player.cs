@@ -36,7 +36,7 @@ public class Player : NetworkBehaviour
     [HideInInspector] public PlayerIcon selectedPlayerIcon = null;
 
     [SerializeField] ActionCard actionCardPrefab;
-    [SerializeField] PlayerIcon icon;
+    public PlayerIcon icon;
 
 
     /// <summary>
@@ -44,24 +44,35 @@ public class Player : NetworkBehaviour
     /// </summary>
     public override void OnNetworkSpawn()
     {
+        GameManager.Instance.players.Add(this);
+        healthText.text = "Health: " + health.ToString();
+        ammoText.text = "Ammo: " + ammo.ToString() + "/" + maxAmmo.ToString();
         if (IsOwner)
         {
             deckBuilder.SetParent(GameManager.Instance.deckBuilderUI, false);
-        }
-        GameManager.Instance.players.Add(this);
-        foreach (var player in GameManager.Instance.players)
-        {
-            if (NetworkManager.Singleton.LocalClientId == player.OwnerClientId)
+            foreach (var player in GameManager.Instance.players)
             {
-                foreach (var p in GameManager.Instance.players)
+                if (NetworkManager.Singleton.LocalClientId == player.OwnerClientId)
                 {
-                    p.GetComponent<PlayerIcon>().targetPlayer = player;
+                    foreach (var p in GameManager.Instance.players)
+                    {
+                        p.icon.targetPlayer = player;
+                    }
+                    break;
                 }
-                break;
             }
         }
-        healthText.text = "Health: " + health.ToString();
-        ammoText.text = "Ammo: " + ammo.ToString() + "/" + maxAmmo.ToString();
+        else
+        {
+            foreach (var player in GameManager.Instance.players)
+            {
+                if (NetworkManager.Singleton.LocalClientId == player.OwnerClientId)
+                {
+                    icon.targetPlayer = player;
+                    break;
+                }
+            }
+        }
     }
 
     public void AddCardToDeck(int actionType)

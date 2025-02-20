@@ -1,6 +1,7 @@
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Card representative of action
@@ -11,6 +12,13 @@ public class ActionCard : MonoBehaviour
     Player player;
     [SerializeField] GameObject selectedUI;
     [SerializeField] TMP_Text cardName;
+
+    [Header("Card Images")]
+    [SerializeField] Image cardImage;
+    [SerializeField] Sprite reloadSprite;
+    [SerializeField] Sprite shootSprite;
+    [SerializeField] Sprite deflectSprite;
+    [SerializeField] Sprite stealSprite;
     bool selected;
     public void Init(PlayerAction actionType, Player player)
     {
@@ -22,6 +30,26 @@ public class ActionCard : MonoBehaviour
     {
         selectedUI.SetActive(false);
         cardName.text = actionType.ToString();
+        switch (actionType)
+        {
+            case PlayerAction.Reload:
+                cardImage.sprite = reloadSprite;
+                cardName.enabled = false;
+                break;
+            case PlayerAction.Shoot:
+                cardImage.sprite= shootSprite;
+                cardName.enabled = false;
+                break;
+            case PlayerAction.Deflect:
+                cardImage.sprite = deflectSprite;
+                cardName.enabled = false;
+                break;
+            case PlayerAction.Steal:
+                cardImage.sprite= stealSprite;
+                cardName.enabled = false;
+                break;
+
+        }
     }
 
     public void ToggleSelection()
