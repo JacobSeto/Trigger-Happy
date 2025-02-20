@@ -93,11 +93,10 @@ MonoBehaviour:
   healthText: {fileID: 6265372178155896945}
   ammoText: {fileID: 3104248277915310965}
   drawAmount: 4
+  discardTime: 3
   deckBuilder: {fileID: 6367272937572189894}
-  speedOne: 0
-  speedTwo: 1
-  speedThree: 2
   selectedCard: {fileID: 0}
+  serverAction: 0
   selectedPlayerIcon: {fileID: 0}
   actionCardPrefab: {fileID: 4697083086694330500, guid: 2a6e9e21451c0ca42905e84bb6a7f44c, type: 3}
   icon: {fileID: 6405987434191671441}
@@ -407,6 +406,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 197566955531785751, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_text
+      value: Remove Shoot
+      objectReference: {fileID: 0}
+    - target: {fileID: 197566955531785751, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_fontSize
+      value: 30.05
+      objectReference: {fileID: 0}
     - target: {fileID: 279351581458199650, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
       value: 3
@@ -430,6 +437,14 @@ PrefabInstance:
     - target: {fileID: 279351581458199650, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 728189293818267080, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_text
+      value: Remove Reload
+      objectReference: {fileID: 0}
+    - target: {fileID: 728189293818267080, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_fontSize
+      value: 27.7
       objectReference: {fileID: 0}
     - target: {fileID: 1091732995465169401, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
@@ -671,6 +686,14 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
+    - target: {fileID: 5216793206791083718, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_text
+      value: Remove Split Shot
+      objectReference: {fileID: 0}
+    - target: {fileID: 5216793206791083718, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_fontSize
+      value: 24.05
+      objectReference: {fileID: 0}
     - target: {fileID: 5276062731754386611, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
       value: 3
@@ -790,6 +813,14 @@ PrefabInstance:
     - target: {fileID: 6488200169396422742, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7116918440041282144, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_text
+      value: Remove Deflect
+      objectReference: {fileID: 0}
+    - target: {fileID: 7116918440041282144, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_fontSize
+      value: 27.9
       objectReference: {fileID: 0}
     - target: {fileID: 7138950262666326864, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
@@ -851,6 +882,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8125482529394394114, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_text
+      value: Remove Steal
+      objectReference: {fileID: 0}
+    - target: {fileID: 8125482529394394114, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+      propertyPath: m_fontSize
+      value: 31.65
+      objectReference: {fileID: 0}
     - target: {fileID: 8148312730140550899, guid: 09573a48d788c924994cc07c791aa193, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -947,7 +986,12 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5988624522703677900, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+    - {fileID: 7763529288639593224, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+    - {fileID: 8771398073316296042, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+    - {fileID: 1856606298374007069, guid: 09573a48d788c924994cc07c791aa193, type: 3}
+    - {fileID: 1253434201450085058, guid: 09573a48d788c924994cc07c791aa193, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

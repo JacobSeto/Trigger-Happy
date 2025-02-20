@@ -29,7 +29,6 @@ public class GameManager : NetworkBehaviour
     public Transform handUI;
     public Transform discardUI;
     public GameObject discardCardUI;
-    public int discardTime;
     int timer;
 
     private void Awake()
@@ -58,7 +57,7 @@ public class GameManager : NetworkBehaviour
     /// </summary>
     public void StartGame()
     {
-        if (IsServer && players.Count >= minPlayers)
+        if (players.Count >= minPlayers)
         {
             StartRoundServer();
             startGameButton.SetActive(false);
@@ -69,7 +68,7 @@ public class GameManager : NetworkBehaviour
     {
         timer = roundTime;
         SetTimerTextRpc(timer);
-        InvokeRepeating(nameof(DecrementTimer), 0, 1f);
+        InvokeRepeating(nameof(DecrementTimer), 1f, 1f);
         StartRoundRpc();
 
     }
@@ -78,6 +77,7 @@ public class GameManager : NetworkBehaviour
     void StartRoundRpc()
     {
         gameUI.SetActive(true);
+        deckBuilderUI.gameObject.SetActive(false);
     }
 
     void DecrementTimer()
@@ -106,17 +106,56 @@ public class GameManager : NetworkBehaviour
 
     IEnumerator ResolveRoundServer()
     {
-        foreach (Player player in players)
-        {
-            player.PlayActionRpc();
-        }
-        yield return new WaitForSeconds(resolveTime);
+        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Mulligan));
+        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Reload));
+        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Steal));
+        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Shoot));
+        yield return StartCoroutine(ResolveActionBatch(PlayerAction.SplitShot));
+        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Deflect));
+
         foreach (Player player in players)
         {
             player.ResetRoundStatesRpc();
+            player.resolvedAction = false;
         }
+
+        yield return new WaitForSeconds(resolveTime);
         EndRoundServer();
     }
+
+    IEnumerator ResolveActionBatch(PlayerAction action)
+    {
+        List<Player> list = new List<Player>();
+        foreach (Player player in players)
+        {
+            if (player.serverAction == (int)action)
+            {
+                list.Add(player);
+                player.PlayActionRpc();
+            }
+        }
+        // Wait for all players to acknowledge their action before moving to the next batch
+        yield return StartCoroutine(WaitForResolvedActions(list));
+    }
+
+    IEnumerator WaitForResolvedActions(List<Player> players)
+    {
+        bool allAcknowledged = false;
+        while (!allAcknowledged)
+        {
+            allAcknowledged = true;
+            foreach (Player player in players)
+            {
+                if (!player.resolvedAction)
+                {
+                    allAcknowledged = false;
+                    break;
+                }
+            }
+            yield return new WaitForFixedUpdate();
+        }
+    }
+
 
     void EndRoundServer()
     {

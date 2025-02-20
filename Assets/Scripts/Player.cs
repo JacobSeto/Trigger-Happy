@@ -2,9 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using TMPro;
-using Unity.VisualScripting;
 
 public class Player : NetworkBehaviour
 {
@@ -15,24 +13,21 @@ public class Player : NetworkBehaviour
     [SerializeField] TMP_Text ammoText;
     [Tooltip("Draw this amount and place one of drawn cards in the discard")]
     [SerializeField] int drawAmount;
+    [SerializeField] float discardTime;
     [SerializeField] Transform deckBuilder;
-    [Tooltip("fastest speed")]
-    [SerializeField] int speedOne = 0;
-    [SerializeField] int speedTwo = 1;
-    [SerializeField] int speedThree = 2;
 
     List<ActionCard> deck = new List<ActionCard>();
     List<ActionCard> hand = new List<ActionCard>();
     List<ActionCard> discard = new List<ActionCard>();
 
     [Header("Round States")]
-    [Tooltip("true when someone has shot at this player. If already true, damage should not be blocked")]
-    bool wasShot;
-    bool tookDamage;
-    bool deflecting;
+    int shotCounter;
+    public bool resolvedAction;
 
     [Tooltip("The card selected that round. Null if no card selected")]
     [HideInInspector] public ActionCard selectedCard = null;
+    [Tooltip("0 means no selection and mulligan, updates server on selections")]
+    [HideInInspector] public int serverAction;
     [HideInInspector] public PlayerIcon selectedPlayerIcon = null;
 
     [SerializeField] ActionCard actionCardPrefab;
@@ -90,12 +85,22 @@ public class Player : NetworkBehaviour
             {
                 if((int)card.actionType == actionType)
                 {
+                    Debug.Log("Removing card");
                     deck.Remove(card);
-                    Destroy(card);
+                    Destroy(card.gameObject);
                     break;
                 }
             }
         }
+    }
+    /// <summary>
+    /// Set to -1 if no action card was selected
+    /// </summary>
+    /// <param name="action"></param>
+    [Rpc(SendTo.Server)]
+    public void UpdateActionRpc(int action)
+    {
+        serverAction = action;
     }
 
     public void Mulligan()
@@ -129,7 +134,7 @@ public class Player : NetworkBehaviour
     IEnumerator DiscardCard()
     {
         GameManager.Instance.discardCardUI.SetActive(true);
-        yield return new WaitForSeconds(GameManager.Instance.discardTime);
+        yield return new WaitForSeconds(discardTime);
         if(selectedCard != null)
         {
             discard.Add(selectedCard);
@@ -147,6 +152,7 @@ public class Player : NetworkBehaviour
         }
         GameManager.Instance.discardCardUI.SetActive(false);
     }
+
     [Rpc(SendTo.Owner)]
     public void PlayActionRpc()
     {
@@ -159,29 +165,40 @@ public class Player : NetworkBehaviour
         }
         else
         {
-            StartCoroutine(ResolveAction());
+            ResolveAction();
         }
+        if (selectedPlayerIcon != null)
+        {
+            selectedPlayerIcon.UnSelectPlayer();
+            selectedPlayerIcon = null;
+        }
+        ResolvedActionRpc();
     }
 
-    IEnumerator ResolveAction()
+    [Rpc(SendTo.Server)]
+    public void ResolvedActionRpc()
+    {
+        resolvedAction = true;
+    }
+
+    void ResolveAction()
     {
         switch (selectedCard.actionType)
         {
             case PlayerAction.Reload:
-                yield return StartCoroutine(Reload());
+                Reload();
                 break;
             case PlayerAction.Shoot:
-                yield return StartCoroutine(Shoot());
+                Shoot();
                 break;
             case PlayerAction.Deflect:
-                deflecting = true;
-                yield return StartCoroutine(Deflect());
+                Deflect();
                 break;
             case PlayerAction.Steal:
-                yield return StartCoroutine(Steal());
+                Steal();
                 break;
             case PlayerAction.SplitShot:
-                yield return StartCoroutine(SplitShot());
+                SplitShot();
                 break;
         }
         discard.Add(selectedCard);
@@ -189,29 +206,22 @@ public class Player : NetworkBehaviour
         hand.Remove(selectedCard);
         selectedCard.UnSelectAction();
         selectedCard = null;
-        if(selectedPlayerIcon != null)
-        {
-            selectedPlayerIcon.UnSelectPlayer();
-            selectedPlayerIcon = null;
-        }
     }
 
 
     /// <summary>
     /// Adds 1 ammo to this player
     /// </summary>
-    IEnumerator Reload()
+    void Reload()
     {
-        yield return new WaitForSeconds(speedOne);
         UpdateAmmoRpc(ammo+1);
 
     }
     /// <summary>
     /// Shoot the target player
     /// </summary>
-    IEnumerator Shoot()
+    void Shoot()
     {
-        yield return new WaitForSeconds(speedTwo);
         if(ammo >= 1 && selectedPlayerIcon.representedPlayer != null)
         {
             UpdateAmmoRpc(ammo - 1);
@@ -221,22 +231,20 @@ public class Player : NetworkBehaviour
     /// <summary>
     /// Deflect one Shoot to target player if did not take damage
     /// </summary>
-    IEnumerator Deflect()
+    void Deflect()
     {
-        yield return new WaitForSeconds(speedThree);
-        if (!tookDamage && ammo >= 1 && selectedPlayerIcon.representedPlayer != null)
+        if (shotCounter < 2 && selectedPlayerIcon.representedPlayer != null)
         {
-            UpdateAmmoRpc(ammo - 1);
             selectedPlayerIcon.representedPlayer.TakeDamageRpc();
+            UpdateHealthRpc(health + 1);
         }
 
     }
     /// <summary>
     /// Steal one ammo from target player
     /// </summary>
-    IEnumerator Steal()
+    void Steal()
     {
-        yield return new WaitForSeconds(speedOne);
         if(selectedPlayerIcon.representedPlayer.ammo > 0)
         {
             UpdateAmmoRpc(ammo + 1);
@@ -246,9 +254,8 @@ public class Player : NetworkBehaviour
     /// <summary>
     /// Slow shot that hits 2 random players. Cannot be the same player
     /// </summary>
-    IEnumerator SplitShot()
+    void SplitShot()
     {
-        yield return new WaitForSeconds(speedThree);
         if (ammo >= 1)
         {
             UpdateAmmoRpc(ammo - 1);
@@ -268,7 +275,7 @@ public class Player : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void ResetRoundStatesRpc()
     {
-        wasShot = tookDamage = deflecting = false;
+        shotCounter = 0;
     }
     [Rpc(SendTo.Everyone)]
     public void UpdateAmmoRpc(int ammo)
@@ -280,20 +287,11 @@ public class Player : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void TakeDamageRpc()
     {
-        if (tookDamage)
-        {
-            return;
-        }
-        if(deflecting && !wasShot)
-        {
-            wasShot = true;
-        }
-        else
+        shotCounter += 1;
+        if(shotCounter < 2)
         {
             UpdateHealthRpc(health - 1);
-            tookDamage = true;
         }
-
     }
 
     [Rpc(SendTo.Everyone)]
