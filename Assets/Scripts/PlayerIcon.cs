@@ -33,6 +33,7 @@ public class PlayerIcon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     void SetPlayerNameServerRpc(string playerName)
     {
+        representedPlayer.name = playerName;
         playerNameText.text = playerName;
         for (int i = 0; i < GameManager.Instance.players.Count; i++)
         {
@@ -69,6 +70,7 @@ public class PlayerIcon : NetworkBehaviour
         selectedUI.SetActive(true);
         targetPlayer.selectedPlayerIcon = this;
         selected = true;
+        targetPlayer.UpdateSelectedPlayerIDServerRpc(representedPlayer.OwnerClientId);
     }
 
 
@@ -77,5 +79,6 @@ public class PlayerIcon : NetworkBehaviour
         selectedUI.SetActive(false);
         targetPlayer.selectedPlayerIcon = null;
         selected = false;
+        targetPlayer.UpdateSelectedPlayerIDServerRpc(99);
     }
 }

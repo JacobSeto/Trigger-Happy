@@ -6,7 +6,7 @@ using TMPro;
 
 public class Player : NetworkBehaviour
 {
-    [SerializeField] int health;
+    public int health;
     public int ammo;
     [SerializeField] int maxAmmo;
     [SerializeField] TMP_Text healthText;
@@ -21,14 +21,13 @@ public class Player : NetworkBehaviour
     List<ActionCard> discard = new List<ActionCard>();
 
     [Header("Round States")]
-    int shotCounter;
-    public bool resolvedAction;
+    [HideInInspector] public int shotCounterServer;
+    [HideInInspector] public PlayerAction selectedActionServer;
+    [Tooltip("99 is a user id that doesn't exist")]
+    public ulong selectedPlayerIDServer;
 
-    [Tooltip("The card selected that round. Null if no card selected")]
-    [HideInInspector] public ActionCard selectedCard = null;
-    [Tooltip("0 means no selection and mulligan, updates server on selections")]
-    [HideInInspector] public int serverAction;
-    [HideInInspector] public PlayerIcon selectedPlayerIcon = null;
+    [HideInInspector] public ActionCard selectedCard;
+    [HideInInspector] public PlayerIcon selectedPlayerIcon;
 
     [SerializeField] ActionCard actionCardPrefab;
     public PlayerIcon icon;
@@ -40,6 +39,7 @@ public class Player : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         GameManager.Instance.players.Add(this);
+        GameManager.Instance.idToPlayer.Add(OwnerClientId, this);
         healthText.text = "Health: " + health.ToString();
         ammoText.text = "Ammo: " + ammo.ToString() + "/" + maxAmmo.ToString();
         if (IsOwner)
@@ -93,17 +93,8 @@ public class Player : NetworkBehaviour
             }
         }
     }
-    /// <summary>
-    /// Set to -1 if no action card was selected
-    /// </summary>
-    /// <param name="action"></param>
-    [Rpc(SendTo.Server)]
-    public void UpdateActionRpc(int action)
-    {
-        serverAction = action;
-    }
-
-    public void Mulligan()
+    [Rpc(SendTo.Owner)]
+    public void MulliganRpc()
     {
         discard.AddRange(hand);
         foreach(ActionCard card in hand)
@@ -153,149 +144,12 @@ public class Player : NetworkBehaviour
         GameManager.Instance.discardCardUI.SetActive(false);
     }
 
-    [Rpc(SendTo.Owner)]
-    public void PlayActionRpc()
+    public void UpdateAmmo(int ammo)
     {
-        GameManager.Instance.ServerLogRpc("Player " + OwnerClientId + ": " +
-         (selectedCard != null ? selectedCard.actionType.ToString() : "none") + " targeting Player " +
-         (selectedPlayerIcon != null ? selectedPlayerIcon.representedPlayer.OwnerClientId.ToString() : "none"));
-        if (selectedCard == null)
-        {
-            Mulligan();
-        }
-        else
-        {
-            ResolveAction();
-        }
-        if (selectedPlayerIcon != null)
-        {
-            selectedPlayerIcon.UnSelectPlayer();
-            selectedPlayerIcon = null;
-        }
-        ResolvedActionRpc();
-    }
-
-    [Rpc(SendTo.Server)]
-    public void ResolvedActionRpc()
-    {
-        resolvedAction = true;
-    }
-
-    void ResolveAction()
-    {
-        switch (selectedCard.actionType)
-        {
-            case PlayerAction.Reload:
-                Reload();
-                break;
-            case PlayerAction.Shoot:
-                Shoot();
-                break;
-            case PlayerAction.Deflect:
-                Deflect();
-                break;
-            case PlayerAction.Steal:
-                Steal();
-                break;
-            case PlayerAction.SplitShot:
-                SplitShot();
-                break;
-        }
-        discard.Add(selectedCard);
-        selectedCard.transform.SetParent(GameManager.Instance.discardUI, false);
-        hand.Remove(selectedCard);
-        selectedCard.UnSelectAction();
-        selectedCard = null;
-    }
-
-
-    /// <summary>
-    /// Adds 1 ammo to this player
-    /// </summary>
-    void Reload()
-    {
-        UpdateAmmoRpc(ammo+1);
-
-    }
-    /// <summary>
-    /// Shoot the target player
-    /// </summary>
-    void Shoot()
-    {
-        if(ammo >= 1 && selectedPlayerIcon.representedPlayer != null)
-        {
-            UpdateAmmoRpc(ammo - 1);
-            selectedPlayerIcon.representedPlayer.TakeDamageRpc();
-        }
-    }
-    /// <summary>
-    /// Deflect one Shoot to target player if did not take damage
-    /// </summary>
-    void Deflect()
-    {
-        if (shotCounter < 2 && selectedPlayerIcon.representedPlayer != null)
-        {
-            selectedPlayerIcon.representedPlayer.TakeDamageRpc();
-            UpdateHealthRpc(health + 1);
-        }
-
-    }
-    /// <summary>
-    /// Steal one ammo from target player
-    /// </summary>
-    void Steal()
-    {
-        if(selectedPlayerIcon.representedPlayer.ammo > 0)
-        {
-            UpdateAmmoRpc(ammo + 1);
-            selectedPlayerIcon.representedPlayer.UpdateAmmoRpc(ammo - 1);
-        }
-    }
-    /// <summary>
-    /// Slow shot that hits 2 random players. Cannot be the same player
-    /// </summary>
-    void SplitShot()
-    {
-        if (ammo >= 1)
-        {
-            UpdateAmmoRpc(ammo - 1);
-            List<Player> list = new List<Player>();
-            list.AddRange(GameManager.Instance.players);
-            list.Remove(this);
-            Player randomPlayer = list[Random.Range(0, list.Count)];
-            randomPlayer.TakeDamageRpc();
-            list.Remove(randomPlayer);
-            if(list.Count > 0)
-            {
-                randomPlayer = list[Random.Range(0, list.Count)];
-                randomPlayer.TakeDamageRpc();
-            }
-        }
-    }
-    [Rpc(SendTo.Owner)]
-    public void ResetRoundStatesRpc()
-    {
-        shotCounter = 0;
-    }
-    [Rpc(SendTo.Everyone)]
-    public void UpdateAmmoRpc(int ammo)
-    {
-        this.ammo = ammo;
+        this.ammo = Mathf.Min(ammo, maxAmmo);
         ammoText.text = "Ammo: " + ammo.ToString() + "/" + maxAmmo.ToString();
     }
-
-    [Rpc(SendTo.Owner)]
-    public void TakeDamageRpc()
-    {
-        shotCounter += 1;
-        if(shotCounter < 2)
-        {
-            UpdateHealthRpc(health - 1);
-        }
-    }
-
-    [Rpc(SendTo.Everyone)]
-    void UpdateHealthRpc(int health)
+    public void UpdateHealth(int health)
     {
         this.health = health;
         healthText.text = "Health: " + health.ToString();
@@ -304,6 +158,34 @@ public class Player : NetworkBehaviour
             Die();
         }
     }
+
+    [Rpc(SendTo.Server)]
+    public void UpdateSelectedActionServerRpc(int selectedAction)
+    {
+        selectedActionServer = (PlayerAction)selectedAction;
+    }
+
+    [Rpc(SendTo.Server)]
+    public void UpdateSelectedPlayerIDServerRpc(ulong id)
+    {
+        selectedPlayerIDServer = id;
+    }
+
+    [Rpc(SendTo.Everyone)]
+    public void ResolveRoundRpc(int ammo, int health)
+    {
+        UpdateAmmo(ammo);
+        UpdateHealth(health);
+        if(selectedCard != null)
+        {
+            selectedCard.UnSelectAction();
+        }
+        if (selectedPlayerIcon != null)
+        {
+            selectedPlayerIcon.UnSelectPlayer();
+        }
+    }
+
 
     public void Die()
     {

@@ -87,7 +87,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  health: 5
+  health: 1
   ammo: 1
   maxAmmo: 3
   healthText: {fileID: 6265372178155896945}
@@ -95,8 +95,10 @@ MonoBehaviour:
   drawAmount: 4
   discardTime: 3
   deckBuilder: {fileID: 6367272937572189894}
+  shotCounterServer: 0
+  selectedActionServer: 0
+  selectedPlayerIDServer: 0
   selectedCard: {fileID: 0}
-  serverAction: 0
   selectedPlayerIcon: {fileID: 0}
   actionCardPrefab: {fileID: 4697083086694330500, guid: 2a6e9e21451c0ca42905e84bb6a7f44c, type: 3}
   icon: {fileID: 6405987434191671441}

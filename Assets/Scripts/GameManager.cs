@@ -4,11 +4,13 @@ using Unity.Netcode;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
     public List<Player> players = new List<Player>();
+    public Dictionary<ulong, Player> idToPlayer = new Dictionary<ulong, Player>();
     [SerializeField] int roundTime;
     [SerializeField] int resolveTime = 3;
     [SerializeField] int minPlayers;
@@ -106,60 +108,180 @@ public class GameManager : NetworkBehaviour
 
     IEnumerator ResolveRoundServer()
     {
-        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Mulligan));
-        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Reload));
-        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Steal));
-        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Shoot));
-        yield return StartCoroutine(ResolveActionBatch(PlayerAction.SplitShot));
-        yield return StartCoroutine(ResolveActionBatch(PlayerAction.Deflect));
-
+        foreach(Player player in players)
+        {
+            if(player.selectedActionServer == PlayerAction.Mulligan)
+            {
+                player.MulliganRpc();
+                ServerLogRpc(player.name + " mulligans");
+            }
+        }
+        foreach(Player player in players)
+        {
+            if (player.selectedActionServer == PlayerAction.Reload)
+            {
+                Reload(player);
+                ServerLogRpc(player.name + " reloads");
+            }
+        }
         foreach (Player player in players)
         {
-            player.ResetRoundStatesRpc();
-            player.resolvedAction = false;
+            if (player.selectedActionServer == PlayerAction.Steal)
+            {
+                string message = Steal(player);
+                ServerLogRpc(message);
+            }
+        }
+        foreach (Player player in players)
+        {
+            if (player.selectedActionServer == PlayerAction.Shoot)
+            {
+                string message = Shoot(player);
+                ServerLogRpc(message);
+            }
+        }
+        foreach (Player player in players)
+        {
+            if (player.selectedActionServer == PlayerAction.SplitShot)
+            {
+                string message = SplitShot(player);
+                ServerLogRpc(message);
+            }
+        }
+        foreach (Player player in players)
+        {
+            if (player.selectedActionServer == PlayerAction.Deflect)
+            {
+                string message = Deflect(player);
+                ServerLogRpc(message);
+            }
+        }
+
+        foreach (Player player in players.ToList())
+        {
+            player.selectedActionServer = 0;
+            player.shotCounterServer = 0;
+            player.selectedPlayerIDServer = 99;
+            player.ResolveRoundRpc(player.ammo, player.health);
         }
 
         yield return new WaitForSeconds(resolveTime);
         EndRoundServer();
     }
 
-    IEnumerator ResolveActionBatch(PlayerAction action)
+    /// <summary>
+    /// Adds 1 ammo to this player
+    /// </summary>
+    void Reload(Player player)
     {
-        List<Player> list = new List<Player>();
-        foreach (Player player in players)
-        {
-            if (player.serverAction == (int)action)
-            {
-                list.Add(player);
-                player.PlayActionRpc();
-            }
-        }
-        // Wait for all players to acknowledge their action before moving to the next batch
-        yield return StartCoroutine(WaitForResolvedActions(list));
+        player.ammo++;
     }
-
-    IEnumerator WaitForResolvedActions(List<Player> players)
+    /// <summary>
+    /// Shoot the target player
+    /// </summary>
+    string Shoot(Player player)
     {
-        bool allAcknowledged = false;
-        while (!allAcknowledged)
+        if (player.ammo >= 1 && player.selectedPlayerIDServer != 99)
         {
-            allAcknowledged = true;
-            foreach (Player player in players)
+            player.ammo--;
+            Player selectedPlayer = idToPlayer[player.selectedPlayerIDServer];
+            selectedPlayer.shotCounterServer++;
+            if(selectedPlayer.shotCounterServer < 2)
             {
-                if (!player.resolvedAction)
+                player.health--;
+            }
+            return player.name + "shot at " + selectedPlayer.name;
+        }
+        else
+        {
+            return player.name + "shot with no ammo";
+        }
+    }
+    /// <summary>
+    /// Deflect one Shoot to target player if did not take damage
+    /// </summary>
+    string Deflect(Player player)
+    {
+        if (player.shotCounterServer == 1)
+        {
+            player.health++;
+            if (player.selectedPlayerIDServer != 99)
+            {
+                Player selectedPlayer = idToPlayer[player.selectedPlayerIDServer];
+                selectedPlayer.shotCounterServer++;
+                if (selectedPlayer.shotCounterServer < 2)
                 {
-                    allAcknowledged = false;
-                    break;
+                    player.health--;
                 }
+                return player.name + " deflected at " + selectedPlayer.name;
             }
-            yield return new WaitForFixedUpdate();
+            return player.name + " deflected";
+        }
+        else if(player.shotCounterServer >= 2)
+        {
+            return player.name + " deflect broke";
+        }
+        else
+        {
+            return player.name + " deflected nothing";
+        }
+
+    }
+    /// <summary>
+    /// Steal one ammo from target player
+    /// </summary>
+    string Steal(Player player)
+    {
+        if (player.selectedPlayerIDServer != 99 && idToPlayer[player.selectedPlayerIDServer].ammo > 0)
+        {
+            idToPlayer[player.selectedPlayerIDServer].ammo--;
+            player.ammo++;
+            return player.name + " stole from " + idToPlayer[player.selectedPlayerIDServer].name;
+        }
+        else
+        {
+            return player.name + " stole nothing";
         }
     }
-
-
+    /// <summary>
+    /// Slow shot that hits 2 random players. Cannot be the same player
+    /// </summary>
+    string SplitShot(Player player)
+    {
+        if(player.ammo > 0)
+        {
+            string message = player.name + " splitshot ";
+            List<Player> list = new List<Player>();
+            list.AddRange(players);
+            list.Remove(player);
+            Player randomPlayer = list[Random.Range(0, list.Count)];
+            randomPlayer.shotCounterServer++;
+            if (randomPlayer.shotCounterServer < 2)
+            {
+                randomPlayer.health--;
+            }
+            message += randomPlayer.name;
+            list.Remove(randomPlayer);
+            if(list.Count > 0)
+            {
+                randomPlayer = list[Random.Range(0, list.Count)];
+                randomPlayer.shotCounterServer++;
+                if (randomPlayer.shotCounterServer < 2)
+                {
+                    randomPlayer.health--;
+                }
+                message += " and " + randomPlayer.name;
+            }
+            return message;
+        }
+        else
+        {
+            return player.name + " shot with no ammo";
+        }
+    }
     void EndRoundServer()
     {
-        if (players.Count == 1)
+        if (players.Count <= 1)
         {
             EndGameRpc();
         }
@@ -172,7 +294,8 @@ public class GameManager : NetworkBehaviour
     void EndGameRpc()
     {
         winText.enabled = true;
-        winText.text = players[0].GetComponent<PlayerIcon>().playerNameText.text + " Wins!";
+        winText.text = players.Count == 1 ? players[0].GetComponent<PlayerIcon>().playerNameText.text + " Wins!"
+            : "It's a Draw!!!";
     }
     [Rpc(SendTo.Everyone)]
     public void ServerLogRpc(string message)

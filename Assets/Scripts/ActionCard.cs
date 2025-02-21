@@ -73,7 +73,7 @@ public class ActionCard : MonoBehaviour
         selectedUI.SetActive(true);
         player.selectedCard = this;
         selected = true;
-        player.UpdateActionRpc((int)actionType);
+        player.UpdateSelectedActionServerRpc((int)actionType);
     }
 
 
@@ -82,6 +82,6 @@ public class ActionCard : MonoBehaviour
         selectedUI.SetActive(false);
         player.selectedCard = null;
         selected = false;
-        player.UpdateActionRpc((int)PlayerAction.Mulligan);
+        player.UpdateSelectedActionServerRpc((int)PlayerAction.Mulligan);
     }
 }
