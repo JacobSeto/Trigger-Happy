@@ -5,18 +5,25 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : NetworkBehaviour
 {
+    [Header("Game Set Up")]
     public static GameManager Instance;
     public List<Player> players = new List<Player>();
     public Dictionary<ulong, Player> idToPlayer = new Dictionary<ulong, Player>();
     [SerializeField] int roundTime;
-    [SerializeField] int resolveTime = 3;
+    public int startingPlayerHealth;
+    [SerializeField] int resolveTime;
     [SerializeField] int minPlayers;
-    [Header("Game Set Up UI")]
-    [SerializeField] GameObject startGameButton;
+    [SerializeField] GameObject startGameUI;
+    [SerializeField] TMP_Text roundTimeText;
+    [SerializeField] TMP_Text startHealthText;
     public TMP_InputField playerNameField;
+
+
     [Header("Game UI")]
     public Transform playerListUI;
     public Transform deckBuilderUI;
@@ -25,6 +32,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] TMP_Text timerText;
     [SerializeField] GameObject serverLogPrefab;
     [SerializeField] Transform serverLogUI;
+    [SerializeField] GameObject winUI;
     [SerializeField] TMP_Text winText;
     [Header("Player UI")]
     public Transform deckUI;
@@ -40,18 +48,33 @@ public class GameManager : NetworkBehaviour
 
     private void Start()
     {
-        startGameButton.SetActive(false);
+        startGameUI.SetActive(false);
         gameUI.SetActive(false);
         discardCardUI.SetActive(false);
-        winText.enabled = false;
     }
     public override void OnNetworkSpawn()
     {
         if (IsServer)
         {
-            startGameButton.SetActive(true);
+            startGameUI.SetActive(true);
         }
         playerListUI.gameObject.SetActive(true);
+    }
+
+    public void SetRoundTimer(Slider roundSlider)
+    {
+        roundTime = (int)roundSlider.value;
+        roundTimeText.text = "Round Time: " + roundTime.ToString();
+    }
+
+    public void SetPlayerHealth(Slider roundSlider)
+    {
+        startingPlayerHealth = (int)roundSlider.value;
+        foreach (var player in players)
+        {
+            player.UpdateHealthRpc(startingPlayerHealth);
+        }
+        startHealthText.text = "Player Health: " + startingPlayerHealth.ToString();
     }
 
     /// <summary>
@@ -62,7 +85,7 @@ public class GameManager : NetworkBehaviour
         if (players.Count >= minPlayers)
         {
             StartRoundServer();
-            startGameButton.SetActive(false);
+            startGameUI.SetActive(false);
         }
     }
 
@@ -159,9 +182,7 @@ public class GameManager : NetworkBehaviour
 
         foreach (Player player in players.ToList())
         {
-            player.selectedActionServer = 0;
             player.shotCounterServer = 0;
-            player.selectedPlayerIDServer = 99;
             player.ResolveRoundRpc(player.ammo, player.health);
         }
 
@@ -188,13 +209,13 @@ public class GameManager : NetworkBehaviour
             selectedPlayer.shotCounterServer++;
             if(selectedPlayer.shotCounterServer < 2)
             {
-                player.health--;
+                selectedPlayer.health--;
             }
-            return player.name + "shot at " + selectedPlayer.name;
+            return player.name + " shot at " + selectedPlayer.name;
         }
         else
         {
-            return player.name + "shot with no ammo";
+            return player.name + "shot but has no ammo";
         }
     }
     /// <summary>
@@ -211,7 +232,7 @@ public class GameManager : NetworkBehaviour
                 selectedPlayer.shotCounterServer++;
                 if (selectedPlayer.shotCounterServer < 2)
                 {
-                    player.health--;
+                    selectedPlayer.health--;
                 }
                 return player.name + " deflected at " + selectedPlayer.name;
             }
@@ -250,6 +271,7 @@ public class GameManager : NetworkBehaviour
     {
         if(player.ammo > 0)
         {
+            player.ammo--;
             string message = player.name + " splitshot ";
             List<Player> list = new List<Player>();
             list.AddRange(players);
@@ -293,7 +315,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     void EndGameRpc()
     {
-        winText.enabled = true;
+        winUI.SetActive(true);
         winText.text = players.Count == 1 ? players[0].GetComponent<PlayerIcon>().playerNameText.text + " Wins!"
             : "It's a Draw!!!";
     }
@@ -303,6 +325,11 @@ public class GameManager : NetworkBehaviour
         GameObject serverLog = Instantiate(serverLogPrefab, serverLogUI);
         serverLog.GetComponent<TMP_Text>().text = message;
         Destroy(serverLog, 10f);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 
 }

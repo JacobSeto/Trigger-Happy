@@ -37,16 +37,15 @@ public class PlayerIcon : NetworkBehaviour
         playerNameText.text = playerName;
         for (int i = 0; i < GameManager.Instance.players.Count; i++)
         {
-            UpdatePlayerNameRpc(GameManager.Instance.players[i]
-                .GetComponent<PlayerIcon>().playerNameText.text, i);
+            GameManager.Instance.players[i].icon.UpdatePlayerNameRpc(GameManager.Instance.players[i]
+                .GetComponent<PlayerIcon>().playerNameText.text);
         }
     }
 
     [Rpc(SendTo.NotServer)]
-    void UpdatePlayerNameRpc(string playerName, int playerIndex)
+    void UpdatePlayerNameRpc(string playerName)
     {
-        GameManager.Instance.players[playerIndex]
-            .GetComponent<PlayerIcon>().playerNameText.text = playerName;
+        playerNameText.text = playerName;
     }
 
     public void ToggleSelection()

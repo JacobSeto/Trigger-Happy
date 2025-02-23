@@ -87,13 +87,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  health: 1
+  health: 5
   ammo: 1
   maxAmmo: 3
   healthText: {fileID: 6265372178155896945}
   ammoText: {fileID: 3104248277915310965}
   drawAmount: 4
-  discardTime: 3
+  discardTime: 4
   deckBuilder: {fileID: 6367272937572189894}
   shotCounterServer: 0
   selectedActionServer: 0

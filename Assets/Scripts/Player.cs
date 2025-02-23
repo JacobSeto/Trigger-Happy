@@ -39,23 +39,19 @@ public class Player : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         GameManager.Instance.players.Add(this);
-        GameManager.Instance.idToPlayer.Add(OwnerClientId, this);
-        healthText.text = "Health: " + health.ToString();
         ammoText.text = "Ammo: " + ammo.ToString() + "/" + maxAmmo.ToString();
+        if (IsServer)
+        {
+            GameManager.Instance.idToPlayer.Add(OwnerClientId, this);
+        }
         if (IsOwner)
         {
             deckBuilder.SetParent(GameManager.Instance.deckBuilderUI, false);
             foreach (var player in GameManager.Instance.players)
             {
-                if (NetworkManager.Singleton.LocalClientId == player.OwnerClientId)
-                {
-                    foreach (var p in GameManager.Instance.players)
-                    {
-                        p.icon.targetPlayer = player;
-                    }
-                    break;
-                }
+                player.icon.targetPlayer = this;
             }
+            SetPlayersHealthRpc();
         }
         else
         {
@@ -67,6 +63,15 @@ public class Player : NetworkBehaviour
                     break;
                 }
             }
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    void SetPlayersHealthRpc()
+    {
+        foreach(var player in GameManager.Instance.players)
+        {
+            player.UpdateHealthRpc(GameManager.Instance.startingPlayerHealth);
         }
     }
 
@@ -85,7 +90,6 @@ public class Player : NetworkBehaviour
             {
                 if((int)card.actionType == actionType)
                 {
-                    Debug.Log("Removing card");
                     deck.Remove(card);
                     Destroy(card.gameObject);
                     break;
@@ -158,6 +162,11 @@ public class Player : NetworkBehaviour
             Die();
         }
     }
+    [Rpc(SendTo.Everyone)]
+    public void UpdateHealthRpc(int health)
+    {
+        UpdateHealth(health);
+    }
 
     [Rpc(SendTo.Server)]
     public void UpdateSelectedActionServerRpc(int selectedAction)
@@ -176,13 +185,20 @@ public class Player : NetworkBehaviour
     {
         UpdateAmmo(ammo);
         UpdateHealth(health);
-        if(selectedCard != null)
+        if (IsOwner)
         {
-            selectedCard.UnSelectAction();
-        }
-        if (selectedPlayerIcon != null)
-        {
-            selectedPlayerIcon.UnSelectPlayer();
+            if (selectedCard != null)
+            {
+                discard.Add(selectedCard);
+                selectedCard.transform.SetParent(GameManager.Instance.discardUI, false);
+                hand.Remove(selectedCard);
+                selectedCard.UnSelectAction();
+
+            }
+            if (selectedPlayerIcon != null)
+            {
+                selectedPlayerIcon.UnSelectPlayer();
+            }
         }
     }
 
