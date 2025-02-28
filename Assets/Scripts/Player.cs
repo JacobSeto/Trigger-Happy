@@ -14,6 +14,7 @@ public class Player : NetworkBehaviour
     [Tooltip("Draw this amount and place one of drawn cards in the discard")]
     [SerializeField] int drawAmount;
     [SerializeField] float discardTime;
+    float discardTimer;
     [SerializeField] Transform deckBuilder;
 
     List<ActionCard> deck = new List<ActionCard>();
@@ -65,6 +66,21 @@ public class Player : NetworkBehaviour
             }
         }
     }
+
+    private void Update()
+    {
+        if(IsOwner && discardTimer > 0)
+        {
+            discardTimer -= Time.deltaTime;
+            GameManager.Instance.discardCardUI.text = "Choose a card to discard: "
+                + Mathf.CeilToInt(discardTimer);
+            if (discardTimer <= 0)
+            {
+                DiscardCard();
+            }
+        }
+    }
+
 
     [Rpc(SendTo.Server)]
     void SetPlayersHealthRpc()
@@ -123,13 +139,13 @@ public class Player : NetworkBehaviour
             deck.Remove(card);
             
         }
-        StartCoroutine(DiscardCard());
+        GameManager.Instance.discardCardUI.gameObject.SetActive(true);
+        discardTimer = discardTime;
     }
 
-    IEnumerator DiscardCard()
+    void DiscardCard()
     {
-        GameManager.Instance.discardCardUI.SetActive(true);
-        yield return new WaitForSeconds(discardTime);
+        GameManager.Instance.discardCardUI.gameObject.SetActive(false);
         if(selectedCard != null)
         {
             discard.Add(selectedCard);
@@ -145,13 +161,12 @@ public class Player : NetworkBehaviour
             selectCard.transform.SetParent(GameManager.Instance.discardUI, false);
             hand.Remove(selectCard);
         }
-        GameManager.Instance.discardCardUI.SetActive(false);
     }
 
     public void UpdateAmmo(int ammo)
     {
         this.ammo = Mathf.Min(ammo, maxAmmo);
-        ammoText.text = "Ammo: " + ammo.ToString() + "/" + maxAmmo.ToString();
+        ammoText.text = "Ammo: " + this.ammo.ToString() + "/" + maxAmmo.ToString();
     }
     public void UpdateHealth(int health)
     {

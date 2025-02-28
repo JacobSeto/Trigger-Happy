@@ -38,7 +38,7 @@ public class GameManager : NetworkBehaviour
     public Transform deckUI;
     public Transform handUI;
     public Transform discardUI;
-    public GameObject discardCardUI;
+    public TMP_Text discardCardUI;
     int timer;
 
     private void Awake()
@@ -50,7 +50,16 @@ public class GameManager : NetworkBehaviour
     {
         startGameUI.SetActive(false);
         gameUI.SetActive(false);
-        discardCardUI.SetActive(false);
+        discardCardUI.gameObject.SetActive(false);
+    }
+
+    private void Update()
+    {
+        //spacebar to skip round timer
+        if(IsHost && Input.GetKeyDown(KeyCode.Space))
+        {
+            timer = 1;
+        }
     }
     public override void OnNetworkSpawn()
     {
@@ -215,7 +224,7 @@ public class GameManager : NetworkBehaviour
         }
         else
         {
-            return player.name + "shot but has no ammo";
+            return player.name + " shot but has no ammo";
         }
     }
     /// <summary>
@@ -324,7 +333,7 @@ public class GameManager : NetworkBehaviour
     {
         GameObject serverLog = Instantiate(serverLogPrefab, serverLogUI);
         serverLog.GetComponent<TMP_Text>().text = message;
-        Destroy(serverLog, 10f);
+        Destroy(serverLog, roundTime + resolveTime);
     }
 
     public void QuitGame()

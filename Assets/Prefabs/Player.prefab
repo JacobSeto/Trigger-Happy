@@ -93,11 +93,11 @@ MonoBehaviour:
   healthText: {fileID: 6265372178155896945}
   ammoText: {fileID: 3104248277915310965}
   drawAmount: 4
-  discardTime: 4
+  discardTime: 5
   deckBuilder: {fileID: 6367272937572189894}
   shotCounterServer: 0
   selectedActionServer: 0
-  selectedPlayerIDServer: 0
+  selectedPlayerIDServer: 99
   selectedCard: {fileID: 0}
   selectedPlayerIcon: {fileID: 0}
   actionCardPrefab: {fileID: 4697083086694330500, guid: 2a6e9e21451c0ca42905e84bb6a7f44c, type: 3}

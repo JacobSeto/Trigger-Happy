@@ -19,6 +19,7 @@ public class ActionCard : MonoBehaviour
     [SerializeField] Sprite shootSprite;
     [SerializeField] Sprite deflectSprite;
     [SerializeField] Sprite stealSprite;
+    [SerializeField] Sprite splitShotSprite;
     bool selected;
     public void Init(PlayerAction actionType, Player player)
     {
@@ -48,6 +49,11 @@ public class ActionCard : MonoBehaviour
                 cardImage.sprite= stealSprite;
                 cardName.enabled = false;
                 break;
+            case PlayerAction.SplitShot:
+                cardImage.sprite= splitShotSprite;
+                cardName.enabled = false;
+                break;
+
 
         }
     }

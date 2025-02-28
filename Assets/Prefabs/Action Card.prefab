@@ -487,10 +487,11 @@ MonoBehaviour:
   selectedUI: {fileID: 1877900101844556959}
   cardName: {fileID: 6465661914518574800}
   cardImage: {fileID: 6807923669370717619}
-  reloadSprite: {fileID: 1700611765809655252, guid: c91ddafd57b6ba642baf7e455b22e1f2, type: 3}
-  shootSprite: {fileID: -1690394322241920187, guid: a3b0af1348248a140b237165d342d98e, type: 3}
-  deflectSprite: {fileID: -344569315240798582, guid: 953df3e83327498449bdd11c8cc81e0f, type: 3}
-  stealSprite: {fileID: -392831802838640451, guid: 2435aa0663e067342ae41466d38817b9, type: 3}
+  reloadSprite: {fileID: 21300000, guid: c0434786b3a0f6e4eb0acd19e474b5ff, type: 3}
+  shootSprite: {fileID: 21300000, guid: 569908b65170b2a489ea2adbec4492d2, type: 3}
+  deflectSprite: {fileID: 21300000, guid: 379d67243502b004c8a55cb4c6226fd6, type: 3}
+  stealSprite: {fileID: 21300000, guid: aa27f2d64476ab44c9ce6075b9626a20, type: 3}
+  splitShotSprite: {fileID: 21300000, guid: 7b50c1487e0d0834ea281a254ef62851, type: 3}
 --- !u!1 &5932229919991081083
 GameObject:
   m_ObjectHideFlags: 0
